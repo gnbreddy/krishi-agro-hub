@@ -1,0 +1,31 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Farmer's hat -->
+  <path d="M8 12C8 8 12 6 16 6C20 6 24 8 24 12L22 14H10L8 12Z" fill="#8B4513"/>
+  
+  <!-- Farmer's face -->
+  <circle cx="16" cy="18" r="6" fill="#FDBCB4"/>
+  
+  <!-- Eyes -->
+  <circle cx="14" cy="16" r="1" fill="#000"/>
+  <circle cx="18" cy="16" r="1" fill="#000"/>
+  
+  <!-- Smile -->
+  <path d="M12 20C12 20 14 22 16 22C18 22 20 20 20 20" stroke="#000" stroke-width="1" fill="none"/>
+  
+  <!-- Body -->
+  <rect x="12" y="24" width="8" height="8" fill="#4A90E2"/>
+  
+  <!-- Arms -->
+  <rect x="8" y="26" width="3" height="4" fill="#FDBCB4"/>
+  <rect x="21" y="26" width="3" height="4" fill="#FDBCB4"/>
+  
+  <!-- Legs -->
+  <rect x="13" y="32" width="2" height="4" fill="#2C3E50"/>
+  <rect x="17" y="32" width="2" height="4" fill="#2C3E50"/>
+  
+  <!-- Wheat stalk in hand -->
+  <path d="M6 24L8 20L10 24" stroke="#8B4513" stroke-width="2" fill="none"/>
+  <circle cx="8" cy="18" r="1" fill="#FFD700"/>
+  <circle cx="7" cy="20" r="1" fill="#FFD700"/>
+  <circle cx="9" cy="20" r="1" fill="#FFD700"/>
+</svg>
