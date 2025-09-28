@@ -1,3 +1,74 @@
+import { ChartContainer, ChartLegend, ChartTooltip } from "@/components/ui/chart";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
+  // Chart state for crop price trends
+  const [trendData, setTrendData] = useState([]);
+  const [loadingTrends, setLoadingTrends] = useState(false);
+
+  // Fetch crop price trends on mount
+  useEffect(() => {
+    async function fetchTrends() {
+      setLoadingTrends(true);
+      try {
+        // Example: fetch extracted crops from backend, then get trends
+        const cropsRes = await fetch("/api/upload-pdf"); // Replace with actual API call or mock
+        const cropsData = await cropsRes.json();
+        const trendsRes = await fetch("/api/analyze-trends", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ crops: cropsData.crops })
+        });
+        const trendsData = await trendsRes.json();
+        setTrendData(trendsData.trendData);
+      } catch (err) {
+        setTrendData([]);
+      } finally {
+        setLoadingTrends(false);
+      }
+    }
+    fetchTrends();
+  }, []);
+      {/* Price Trends Section */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Price Trends (2024-25 to 2025-26)</h2>
+        {loadingTrends ? (
+          <div className="p-6 text-center text-muted-foreground">Loading chart...</div>
+        ) : trendData.length > 0 ? (
+          <ChartContainer
+            config={trendData.reduce((acc, item) => {
+              acc[item.crop] = { label: item.crop, color: undefined };
+              return acc;
+            }, {})}
+            className="bg-white/80 rounded-xl shadow-lg p-4"
+          >
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={trendData[0].months.map((month, i) => {
+                const row = { month };
+                trendData.forEach(item => {
+                  row[item.crop] = item.prices[i];
+                });
+                return row;
+              })}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip content={<ChartTooltip />} />
+                <Legend content={<ChartLegend />} />
+                {trendData.map(item => (
+                  <Line
+                    key={item.crop}
+                    type="monotone"
+                    dataKey={item.crop}
+                    stroke="#2e7d32"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : (
+          <div className="p-6 text-center text-muted-foreground">No trend data available.</div>
+        )}
+      </section>
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, BarChart3, MapPin, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +77,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarketDataService, DemandSupplyService, MarketData, DemandSupplyData } from "@/lib/api-services";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const marketData = [
   {

@@ -62,24 +62,24 @@ export interface DemandSupplyData {
 export class WeatherService {
   static async getCurrentWeather(lat: number, lon: number): Promise<WeatherData> {
     try {
-      // Try to use the weather API if key is available
-      if (API_CONFIG.WEATHER_API_KEY && API_CONFIG.WEATHER_API_KEY !== 'your_weather_api_key_here') {
+      // Use Tomorrow.io API if key is available
+  if (API_CONFIG.WEATHER_API_KEY) {
         const response = await fetch(
-          `${API_ENDPOINTS.WEATHER_CURRENT}?lat=${lat}&lon=${lon}&appid=${API_CONFIG.WEATHER_API_KEY}&units=metric`
+          `https://api.tomorrow.io/v4/weather/forecast?location=${lat},${lon}&apikey=${API_CONFIG.WEATHER_API_KEY}`
         );
-        
         if (response.ok) {
           const data = await response.json();
-          
+          // Parse Tomorrow.io response
+          const current = data.timelines?.minutely?.[0]?.values || {};
           return {
-            location: `${data.name}, ${data.sys.country}`,
-            temperature: Math.round(data.main.temp),
-            condition: data.weather[0].description,
-            humidity: data.main.humidity,
-            wind: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
-            pressure: data.main.pressure,
-            visibility: Math.round(data.visibility / 1000), // Convert m to km
-            uvIndex: 0, // UV index not available in current weather
+            location: `${lat}, ${lon}`,
+            temperature: Math.round(current.temperature || 0),
+            condition: current.weatherCode ? String(current.weatherCode) : 'Unknown',
+            humidity: Math.round(current.humidity || 0),
+            wind: Math.round(current.windSpeed || 0),
+            pressure: Math.round(current.pressureSurfaceLevel || 0),
+            visibility: Math.round(current.visibility || 0),
+            uvIndex: Math.round(current.uvIndex || 0),
             forecast: [] // Will be populated by forecast API
           };
         }
@@ -123,35 +123,31 @@ export class WeatherService {
 
   static async getWeatherForecast(lat: number, lon: number): Promise<WeatherForecast[]> {
     try {
-      // Try to use the weather API if key is available
-      if (API_CONFIG.WEATHER_API_KEY && API_CONFIG.WEATHER_API_KEY !== 'your_weather_api_key_here') {
+      // Use Tomorrow.io API if key is available
+  if (API_CONFIG.WEATHER_API_KEY) {
         const response = await fetch(
-          `${API_ENDPOINTS.WEATHER_FORECAST}?lat=${lat}&lon=${lon}&appid=${API_CONFIG.WEATHER_API_KEY}&units=metric`
+          `https://api.tomorrow.io/v4/weather/forecast?location=${lat},${lon}&apikey=${API_CONFIG.WEATHER_API_KEY}`
         );
-        
         if (response.ok) {
           const data = await response.json();
-          
-          // Process 5-day forecast data
+          // Parse Tomorrow.io daily forecast
           const forecast: WeatherForecast[] = [];
-          const dailyData = data.list.filter((item: any, index: number) => index % 8 === 0).slice(0, 5);
-          
+          const dailyData = data.timelines?.daily || [];
           dailyData.forEach((item: any, index: number) => {
-            const date = new Date(item.dt * 1000);
-            const dayName = index === 0 ? 'Today' : 
-                           index === 1 ? 'Tomorrow' : 
-                           date.toLocaleDateString('en-US', { weekday: 'long' });
-            
+            const date = new Date(item.time);
+            const dayName = index === 0 ? 'Today' :
+              index === 1 ? 'Tomorrow' :
+              date.toLocaleDateString('en-US', { weekday: 'long' });
+            const values = item.values || {};
             forecast.push({
               day: dayName,
-              high: Math.round(item.main.temp_max),
-              low: Math.round(item.main.temp_min),
-              condition: item.weather[0].description,
-              precipitation: item.rain ? item.rain['3h'] || 0 : 0,
-              windSpeed: Math.round(item.wind.speed * 3.6)
+              high: Math.round(values.temperatureMax || 0),
+              low: Math.round(values.temperatureMin || 0),
+              condition: values.weatherCode ? String(values.weatherCode) : 'Unknown',
+              precipitation: Math.round(values.precipitationProbability || 0),
+              windSpeed: Math.round(values.windSpeedAvg || 0)
             });
           });
-          
           return forecast;
         }
       }
@@ -256,7 +252,7 @@ export class MarketDataService {
       // Try to fetch real data from government API first
       try {
         const response = await fetch(
-          `${API_CONFIG.GOVERNMENT_DATA_API}/9ef84268-d588-465a-a308-a864a2d2df49?api-key=${API_CONFIG.DEMAND_SUPPLY_API_KEY}&format=json&limit=20`
+          `${API_CONFIG.GOVERNMENT_DATA_API}/9ef84268-d588-465a-a308-a864a2d2df49?api-key=${API_CONFIG.LIVE_PRICE_API_KEY}&format=json&limit=20`
         );
         
         if (response.ok) {
@@ -269,7 +265,7 @@ export class MarketDataService {
               unit: record.price_unit || 'per quintal',
               market: record.market || 'Unknown',
               state: record.state || 'Unknown',
-              date: record.date || new Date().toISOString(),
+              date: record.arrival_date || new Date().toISOString(),
               change: Math.floor(Math.random() * 200) - 100, // Random change for demo
               changePercent: Math.floor(Math.random() * 10) - 5 // Random percentage for demo
             }));
