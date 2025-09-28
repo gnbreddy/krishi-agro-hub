@@ -9,6 +9,7 @@ import PricePrediction from "./pages/PricePrediction";
 import CropCalendar from "./pages/CropCalendar";
 import FertilizerCalculator from "./pages/FertilizerCalculator";
 import Jobs from "./pages/Jobs";
+import JobsPosted from "./pages/JobsPosted";
 import AIChat from "./pages/AIChat";
 import NotFound from "./pages/NotFound";
 import PostJob from "./pages/PostJob";
@@ -26,6 +27,7 @@ const App = () => (
             <Route index element={<Home />} />
             <Route path="price-prediction" element={<PricePrediction />} />
             <Route path="jobs" element={<Jobs />} />
+            <Route path="jobs-posted" element={<JobsPosted />} />
             <Route path="post-job" element={<PostJob />} />
             <Route path="ai-chat" element={<AIChat />} />
             <Route path="crop-calendar" element={<CropCalendar />} />

@@ -1,9 +1,24 @@
+import { analyzeTrends } from './trendAnalyzer.js';
+// Analyze price trends endpoint
+app.post('/api/analyze-trends', async (req, res) => {
+  try {
+    const { crops } = req.body; // [{ crop, price }]
+    const trendData = analyzeTrends(crops);
+    res.json({ trendData });
+  } catch (err) {
+    console.error('Trend analysis error:', err);
+    res.status(500).json({ error: 'Failed to analyze trends' });
+  }
+});
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from 'mongoose';
 import Job from './models/Job.js';
+import multer from 'multer';
+import path from 'path';
+import { extractCropsAndPrices } from './pdfProcessor.js';
 
 dotenv.config();
 
@@ -12,6 +27,8 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+// Set up multer for PDF uploads
+const upload = multer({ dest: 'uploads/' });
 
 const db_user = "gopavaramnagabharathreddy_db_user";
 const db_password = "al1IzVc1iuZDPGLy";
@@ -61,4 +78,16 @@ app.post("/api/chat", async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
+});
+
+// PDF upload and processing endpoint
+app.post('/api/upload-pdf', upload.single('pdf'), async (req, res) => {
+  try {
+    const pdfPath = req.file.path;
+    const crops = await extractCropsAndPrices(pdfPath);
+    res.json({ crops });
+  } catch (err) {
+    console.error('PDF processing error:', err);
+    res.status(500).json({ error: 'Failed to process PDF' });
+  }
 });

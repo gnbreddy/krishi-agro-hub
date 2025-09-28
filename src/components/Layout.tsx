@@ -1,36 +1,23 @@
 import { Outlet } from "react-router-dom";
-import { Header } from "./Header";
-import { BottomNavigation } from "./BottomNavigation";
-import { SideMenu } from "./SideMenu";
-import { ProfileModal } from "./ProfileModal";
-import { useState } from "react";
 
 export const Layout = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header 
-        onMenuToggle={() => setIsMenuOpen(true)}
-        onProfileToggle={() => setIsProfileOpen(true)}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm px-4 py-3 border-b">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-xl font-semibold text-gray-800">Krishi - Agricultural Companion</h1>
+        </div>
+      </header>
       
-      <main className="flex-1 pb-20">
+      <main className="flex-1">
         <Outlet />
       </main>
       
-      <BottomNavigation />
-      
-      <SideMenu 
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-      />
-      
-      <ProfileModal 
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-      />
+      <footer className="bg-white border-t px-4 py-3">
+        <div className="max-w-7xl mx-auto text-center text-gray-600">
+          <p>&copy; 2024 Krishi. Your agricultural companion.</p>
+        </div>
+      </footer>
     </div>
   );
 };
