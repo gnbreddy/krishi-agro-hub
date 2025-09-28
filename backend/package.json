@@ -15,6 +15,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "mongoose": "^8.18.2",
     "vite_react_shadcn_ts": "file:.."
   }
 }

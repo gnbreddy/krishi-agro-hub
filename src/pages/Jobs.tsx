@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MapPin, Users, IndianRupee, FileText, Phone, Mail, Briefcase } from "lucide-react";
+import { MapPin, Users, IndianRupee, FileText, Phone, Mail, Briefcase, Calendar, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -34,8 +34,36 @@ export default function Jobs() {
     email: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [postedJobs, setPostedJobs] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchPostedJobs();
+  }, []);
+
+  const fetchPostedJobs = async () => {
+    try {
+      setLoadingJobs(true);
+      const response = await fetch("http://localhost:5000/api/jobs");
+      if (response.ok) {
+        const data = await response.json();
+        setPostedJobs(data.slice(0, 5)); // Show only latest 5 jobs
+      } else {
+        throw new Error("Failed to fetch jobs");
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load posted jobs. Please check if backend server is running.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -110,19 +138,44 @@ export default function Jobs() {
           phoneNumber: "",
           email: ""
         });
+
+        // Refresh posted jobs
+        fetchPostedJobs();
       } else {
-        throw new Error("Failed to post job");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to post job");
       }
     } catch (error) {
       console.error("Error posting job:", error);
       toast({
         title: "Error",
-        description: "Failed to post job. Please try again.",
+        description: `Failed to post job: ${error.message}. Please check if backend server is running.`,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getJobTypeColor = (jobType: string) => {
+    const colors: { [key: string]: string } = {
+      "Land Preparation": "bg-orange-100 text-orange-700",
+      "Sowing": "bg-green-100 text-green-700",
+      "Manuring and Fertilization": "bg-yellow-100 text-yellow-700",
+      "Irrigation": "bg-blue-100 text-blue-700",
+      "Weeding and Pest Control": "bg-red-100 text-red-700",
+      "Harvesting": "bg-purple-100 text-purple-700",
+      "Post-Harvest Management": "bg-indigo-100 text-indigo-700"
+    };
+    return colors[jobType] || "bg-gray-100 text-gray-700";
   };
 
   return (
@@ -314,49 +367,94 @@ export default function Jobs() {
           </CardContent>
         </Card>
 
-        {/* Right Half - View Posted Jobs */}
+        {/* Right Half - Posted Jobs */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Posted Jobs
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Posted Jobs
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchPostedJobs}
+                disabled={loadingJobs}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loadingJobs ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-gray-600">
-              View all posted job requests. Workers can browse and apply for jobs based on their skills and location.
-            </p>
-            
-            <div className="space-y-3">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h3 className="font-semibold text-green-800 mb-2">Job Categories Available</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {jobTypes.map((type) => (
-                    <div key={type} className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      {type}
+            {loadingJobs ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Loading jobs...</p>
+              </div>
+            ) : postedJobs.length > 0 ? (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {postedJobs.map((job, index) => (
+                  <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-sm">{job.title}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs ${getJobTypeColor(job.category)}`}>
+                        {job.category}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{job.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        <span>{job.company}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <IndianRupee className="h-3 w-3" />
+                        <span className="font-semibold">{job.salary}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(job.postedDate)}</span>
+                      </div>
+                    </div>
 
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-800 mb-2">Filtering Options</h3>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Filter by job type</li>
-                  <li>• Filter by pay range</li>
-                  <li>• Filter by farm size</li>
-                  <li>• Filter by location</li>
-                </ul>
+                    {job.description && (
+                      <p className="text-xs text-gray-700 mt-2 line-clamp-2">
+                        {job.description}
+                      </p>
+                    )}
+
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700">
+                        Apply
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        Contact
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">No jobs posted yet</p>
+                <p className="text-xs">Post a job to see it here</p>
+              </div>
+            )}
+
+            <div className="pt-4 border-t">
+              <Button 
+                onClick={() => navigate("/jobs-posted")}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                View All Posted Jobs
+              </Button>
             </div>
-
-            <Button 
-              onClick={() => navigate("/jobs-posted")}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              View All Posted Jobs
-            </Button>
           </CardContent>
         </Card>
       </div>
